@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PersonalVault</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f0f; --surface: #161616; --surface2: #1e1e1e;
+    --border: #2a2a2a; --border2: #333;
+    --accent: #c9a84c; --accent2: #e8c97a;
+    --text: #e8e4dc; --text2: #9a9590; --text3: #5a5550;
+    --danger: #c0503a; --notes: #7b9fc9; --files: #c97b8a; --contacts: #7bc9a8;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+
+  /* LOGIN */
+  #login-screen { min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--bg); position:relative; }
+  .login-bg { position:absolute; inset:0; background:radial-gradient(ellipse 60% 40% at 20% 80%,rgba(201,168,76,.06) 0%,transparent 60%),radial-gradient(ellipse 50% 50% at 80% 20%,rgba(201,168,76,.04) 0%,transparent 60%); pointer-events:none; }
+  .login-grid { position:absolute; inset:0; background-image:linear-gradient(rgba(201,168,76,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(201,168,76,.04) 1px,transparent 1px); background-size:48px 48px; pointer-events:none; mask-image:radial-gradient(ellipse 70% 70% at 50% 50%,black 0%,transparent 100%); }
+  .login-card { position:relative; background:var(--surface); border:1px solid var(--border2); width:420px; padding:52px 48px 48px; box-shadow:0 40px 80px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.04); }
+  .login-logo { display:flex; align-items:center; gap:12px; margin-bottom:40px; }
+  .login-logo-icon { width:36px; height:36px; background:var(--accent); display:grid; place-items:center; font-size:16px; }
+  .login-logo-text { font-family:'DM Serif Display',serif; font-size:22px; }
+  .login-logo-text span { color:var(--accent); }
+  .login-heading { font-family:'DM Serif Display',serif; font-size:28px; margin-bottom:8px; line-height:1.2; }
+  .login-sub { font-size:13px; color:var(--text2); margin-bottom:36px; }
+  .field-group { margin-bottom:20px; }
+  .field-label { font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--text2); margin-bottom:8px; display:block; }
+  .field-input { width:100%; background:var(--bg); border:1px solid var(--border2); color:var(--text); font-family:'DM Mono',monospace; font-size:13px; padding:12px 14px; outline:none; transition:border-color .2s; }
+  .field-input:focus { border-color:var(--accent); }
+  .field-input::placeholder { color:var(--text3); }
+  .login-error { background:rgba(192,80,58,.1); border:1px solid rgba(192,80,58,.3); color:#e07060; font-size:12px; padding:10px 12px; margin-bottom:20px; display:none; }
+  .btn-primary { width:100%; background:var(--accent); color:#0f0f0f; border:none; padding:14px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; letter-spacing:.04em; cursor:pointer; transition:background .2s; }
+  .btn-primary:hover { background:var(--accent2); }
+  .login-hint { margin-top:24px; font-size:11px; color:var(--text3); text-align:center; font-family:'DM Mono',monospace; }
+
+  /* APP */
+  #app { display:none; min-height:100vh; flex-direction:column; }
+  .topnav { height:56px; background:var(--surface); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 24px; gap:24px; position:sticky; top:0; z-index:100; }
+  .nav-logo { font-family:'DM Serif Display',serif; font-size:18px; margin-right:8px; }
+  .nav-logo span { color:var(--accent); }
+  .nav-divider { width:1px; height:20px; background:var(--border2); }
+  .nav-tabs { display:flex; gap:4px; flex:1; }
+  .nav-tab { display:flex; align-items:center; gap:7px; padding:6px 14px; font-size:12.5px; font-weight:500; color:var(--text2); cursor:pointer; border:1px solid transparent; transition:all .15s; background:transparent; font-family:'DM Sans',sans-serif; }
+  .nav-tab:hover { color:var(--text); background:var(--surface2); }
+  .nav-tab.active { color:var(--text); background:var(--surface2); border-color:var(--border2); }
+  .tab-dot { width:6px; height:6px; border-radius:50%; }
+  .dot-notes { background:var(--notes); } .dot-files { background:var(--files); } .dot-contacts { background:var(--contacts); }
+  .nav-actions { display:flex; align-items:center; gap:12px; margin-left:auto; }
+  .nav-search { display:flex; align-items:center; gap:8px; background:var(--bg); border:1px solid var(--border2); padding:6px 12px; width:200px; }
+  .nav-search input { background:transparent; border:none; color:var(--text); font-size:12px; font-family:'DM Mono',monospace; outline:none; width:100%; }
+  .nav-search input::placeholder { color:var(--text3); }
+  .btn-logout { background:transparent; border:1px solid var(--border2); color:var(--text2); font-family:'DM Sans',sans-serif; font-size:12px; padding:6px 14px; cursor:pointer; transition:all .15s; }
+  .btn-logout:hover { border-color:var(--danger); color:var(--danger); }
+  .app-body { flex:1; display:flex; overflow:hidden; }
+  .panel { display:none; width:100%; flex-direction:column; overflow:hidden; }
+  .panel.active { display:flex; }
+
+  /* NOTES */
+  .notes-layout { display:grid; grid-template-columns:280px 1fr; height:calc(100vh - 56px); overflow:hidden; }
+  .notes-sidebar { background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; }
+  .sidebar-header { padding:20px 20px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+  .sidebar-title { font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--text2); }
+  .btn-add { background:var(--accent); border:none; color:#0f0f0f; width:24px; height:24px; font-size:16px; cursor:pointer; display:grid; place-items:center; line-height:1; transition:background .15s; font-weight:600; }
+  .btn-add:hover { background:var(--accent2); }
+  .notes-list { flex:1; overflow-y:auto; padding:8px; }
+  .notes-list::-webkit-scrollbar { width:4px; }
+  .notes-list::-webkit-scrollbar-thumb { background:var(--border2); }
+  .note-item { padding:12px 14px; cursor:pointer; border:1px solid transparent; margin-bottom:2px; transition:all .15s; }
+  .note-item:hover { background:var(--surface2); border-color:var(--border); }
+  .note-item.active { background:var(--surface2); border-color:var(--border2); }
+  .note-item-title { font-size:13px; font-weight:500; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .note-item-preview { font-size:11px; color:var(--text2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .note-item-date { font-size:10px; color:var(--text3); font-family:'DM Mono',monospace; margin-top:6px; }
+  .notes-editor { display:flex; flex-direction:column; overflow:hidden; background:var(--bg); }
+  .editor-toolbar { padding:16px 24px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; background:var(--surface); }
+  .editor-title-input { flex:1; background:transparent; border:none; color:var(--text); font-family:'DM Serif Display',serif; font-size:20px; outline:none; }
+  .editor-title-input::placeholder { color:var(--text3); }
+  .btn-save { background:transparent; border:1px solid var(--accent); color:var(--accent); font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:.06em; padding:6px 14px; cursor:pointer; transition:all .15s; }
+  .btn-save:hover { background:var(--accent); color:#0f0f0f; }
+  .btn-delete-note { background:transparent; border:1px solid var(--border2); color:var(--text3); font-size:12px; padding:6px 10px; cursor:pointer; transition:all .15s; font-family:'DM Sans',sans-serif; }
+  .btn-delete-note:hover { border-color:var(--danger); color:var(--danger); }
+  .editor-body { flex:1; overflow-y:auto; padding:32px 40px; }
+  .editor-textarea { width:100%; min-height:500px; background:transparent; border:none; color:var(--text); font-family:'DM Sans',sans-serif; font-size:15px; line-height:1.8; outline:none; resize:none; }
+  .editor-textarea::placeholder { color:var(--text3); }
+  .editor-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--text3); gap:12px; }
+  .editor-empty-icon { font-size:48px; opacity:.3; }
+
+  /* FILES */
+  .files-layout { display:flex; flex-direction:column; height:calc(100vh - 56px); overflow:hidden; }
+  .files-header { padding:24px 32px 20px; border-bottom:1px solid var(--border); background:var(--surface); display:flex; align-items:center; justify-content:space-between; }
+  .files-title { font-family:'DM Serif Display',serif; font-size:22px; }
+  .files-title-sub { font-size:12px; color:var(--text2); margin-top:2px; }
+  .btn-upload { background:var(--accent); border:none; color:#0f0f0f; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:600; padding:10px 20px; cursor:pointer; transition:background .15s; }
+  .btn-upload:hover { background:var(--accent2); }
+  .files-drop-zone { margin:24px 32px 0; border:2px dashed var(--border2); padding:28px; text-align:center; cursor:pointer; transition:all .2s; background:var(--surface); }
+  .files-drop-zone:hover,.files-drop-zone.drag-over { border-color:var(--accent); background:rgba(201,168,76,.04); }
+  .drop-icon { font-size:28px; margin-bottom:8px; color:var(--text2); }
+  .drop-text { font-size:13px; color:var(--text2); }
+  .drop-sub { font-size:11px; color:var(--text3); margin-top:4px; font-family:'DM Mono',monospace; }
+  .files-grid { flex:1; overflow-y:auto; padding:24px 32px 32px; }
+  .files-grid::-webkit-scrollbar { width:4px; }
+  .files-grid::-webkit-scrollbar-thumb { background:var(--border2); }
+  .files-section-title { font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--text3); margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+  .file-cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; margin-bottom:32px; }
+  .file-card { background:var(--surface); border:1px solid var(--border); padding:20px 18px 14px; border:1px solid var(--border); transition:all .15s; position:relative; }
+  .file-card:hover { border-color:var(--border2); background:var(--surface2); }
+  .file-card-icon { font-size:28px; margin-bottom:12px; }
+  .file-card-name { font-size:12.5px; font-weight:500; margin-bottom:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .file-card-meta { font-size:10px; color:var(--text3); font-family:'DM Mono',monospace; margin-bottom:12px; }
+  .file-card-delete { position:absolute; top:8px; right:8px; background:transparent; border:none; color:var(--text3); cursor:pointer; font-size:14px; padding:2px 6px; display:none; transition:color .15s; }
+  .file-card:hover .file-card-delete { display:block; }
+  .file-card-delete:hover { color:var(--danger); }
+  .file-card-actions { display:flex; gap:6px; }
+  .file-btn-open { flex:1; background:var(--accent); border:none; color:#0f0f0f; font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; padding:5px 8px; cursor:pointer; transition:background .15s; }
+  .file-btn-open:hover { background:var(--accent2); }
+  .file-btn-dl { background:transparent; border:1px solid var(--border2); color:var(--text2); font-size:13px; padding:5px 8px; cursor:pointer; transition:all .15s; }
+  .file-btn-dl:hover { border-color:var(--accent); color:var(--accent); }
+  .files-empty { text-align:center; padding:48px; color:var(--text3); font-size:13px; }
+  .upload-progress { margin:12px 32px 0; background:var(--surface); border:1px solid var(--border); padding:12px 16px; font-size:12px; color:var(--text2); display:none; }
+  .progress-bar-track { height:3px; background:var(--border2); margin-top:8px; }
+  .progress-bar-fill { height:3px; background:var(--accent); width:0%; transition:width .3s; }
+
+  /* CONTACTS */
+  .contacts-layout { display:grid; grid-template-columns:320px 1fr; height:calc(100vh - 56px); overflow:hidden; }
+  .contacts-sidebar { background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; }
+  .contacts-list { flex:1; overflow-y:auto; padding:8px; }
+  .contacts-list::-webkit-scrollbar { width:4px; }
+  .contacts-list::-webkit-scrollbar-thumb { background:var(--border2); }
+  .contact-item { display:flex; align-items:center; gap:12px; padding:12px 14px; cursor:pointer; border:1px solid transparent; margin-bottom:2px; transition:all .15s; }
+  .contact-item:hover { background:var(--surface2); border-color:var(--border); }
+  .contact-item.active { background:var(--surface2); border-color:var(--border2); }
+  .contact-avatar { width:36px; height:36px; border-radius:50%; display:grid; place-items:center; font-weight:600; font-size:14px; flex-shrink:0; }
+  .contact-name { font-size:13px; font-weight:500; margin-bottom:2px; }
+  .contact-role { font-size:11px; color:var(--text2); }
+  .contact-detail { background:var(--bg); padding:40px 48px; overflow-y:auto; }
+  .contact-detail-header { display:flex; align-items:center; gap:24px; margin-bottom:40px; padding-bottom:32px; border-bottom:1px solid var(--border); }
+  .contact-detail-avatar { width:72px; height:72px; border-radius:50%; display:grid; place-items:center; font-family:'DM Serif Display',serif; font-size:28px; flex-shrink:0; }
+  .contact-detail-name { font-family:'DM Serif Display',serif; font-size:28px; margin-bottom:4px; }
+  .contact-detail-role { font-size:13px; color:var(--text2); }
+  .contact-actions { margin-left:auto; display:flex; gap:8px; }
+  .btn-edit { background:transparent; border:1px solid var(--border2); color:var(--text2); font-size:12px; padding:8px 16px; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all .15s; }
+  .btn-edit:hover { border-color:var(--accent); color:var(--accent); }
+  .btn-del-contact { background:transparent; border:1px solid var(--border2); color:var(--text3); font-size:12px; padding:8px 14px; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all .15s; }
+  .btn-del-contact:hover { border-color:var(--danger); color:var(--danger); }
+  .contact-fields { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+  .contact-field-label { font-size:10px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--text3); margin-bottom:6px; font-family:'DM Mono',monospace; }
+  .contact-field-value { font-size:14px; color:var(--text); }
+  .contact-field-empty { color:var(--text3); font-style:italic; font-size:13px; }
+  .contact-detail-empty { display:flex; align-items:center; justify-content:center; height:100%; flex-direction:column; gap:12px; color:var(--text3); }
+  .contact-detail-empty-icon { font-size:48px; opacity:.3; }
+
+  /* MODAL */
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.7); backdrop-filter:blur(4px); z-index:1000; display:none; align-items:center; justify-content:center; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:var(--surface); border:1px solid var(--border2); width:480px; max-height:85vh; overflow-y:auto; padding:36px; box-shadow:0 40px 80px rgba(0,0,0,.5); }
+  .modal-title { font-family:'DM Serif Display',serif; font-size:22px; margin-bottom:28px; }
+  .modal-fields { display:flex; flex-direction:column; gap:16px; }
+  .modal-field-label { font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--text2); margin-bottom:6px; display:block; }
+  .modal-input { width:100%; background:var(--bg); border:1px solid var(--border2); color:var(--text); font-family:'DM Mono',monospace; font-size:13px; padding:10px 12px; outline:none; transition:border-color .2s; }
+  .modal-input:focus { border-color:var(--accent); }
+  .modal-actions { display:flex; gap:10px; margin-top:28px; justify-content:flex-end; }
+  .btn-cancel { background:transparent; border:1px solid var(--border2); color:var(--text2); font-family:'DM Sans',sans-serif; font-size:12px; padding:9px 20px; cursor:pointer; transition:all .15s; }
+  .btn-cancel:hover { border-color:var(--text2); color:var(--text); }
+  .btn-confirm { background:var(--accent); border:none; color:#0f0f0f; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:600; padding:9px 24px; cursor:pointer; transition:background .15s; }
+  .btn-confirm:hover { background:var(--accent2); }
+
+  /* TOAST */
+  .toast { position:fixed; bottom:24px; right:24px; background:var(--surface2); border:1px solid var(--border2); color:var(--text); font-size:12px; padding:12px 20px; z-index:2000; transform:translateY(80px); opacity:0; transition:all .3s; border-left:3px solid var(--accent); }
+  .toast.show { transform:translateY(0); opacity:1; }
+
+  #file-input { display:none; }
+  .spinner { display:inline-block; width:14px; height:14px; border:2px solid var(--border2); border-top-color:var(--accent); border-radius:50%; animation:spin .6s linear infinite; margin-right:6px; vertical-align:middle; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-bg"></div>
+  <div class="login-grid"></div>
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">🔒</div>
+      <div class="login-logo-text">Personal<span>Vault</span></div>
+    </div>
+    <h1 class="login-heading">Secure access to<br>your data</h1>
+    <p class="login-sub">Sign in to continue to your personal vault.</p>
+    <div id="login-error" class="login-error">Incorrect username or password.</div>
+    <div class="field-group">
+      <label class="field-label">Username</label>
+      <input class="field-input" type="text" id="username" placeholder="Enter your username" autocomplete="off">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Password</label>
+      <input class="field-input" type="password" id="password" placeholder="Enter your password">
+    </div>
+    <button class="btn-primary" id="login-btn" onclick="login()">Sign In →</button>
+    <p class="login-hint">Default: admin / vault2024</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <nav class="topnav">
+    <div class="nav-logo">Personal<span>Vault</span></div>
+    <div class="nav-divider"></div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="switchTab('notes',this)"><span class="tab-dot dot-notes"></span> Notes & Journal</button>
+      <button class="nav-tab" onclick="switchTab('files',this)"><span class="tab-dot dot-files"></span> Files & Documents</button>
+      <button class="nav-tab" onclick="switchTab('contacts',this)"><span class="tab-dot dot-contacts"></span> Contacts</button>
+    </div>
+    <div class="nav-actions">
+      <div class="nav-search"><span style="color:var(--text3);font-size:12px">⌕</span><input type="text" placeholder="Search..." id="global-search" oninput="globalSearch(this.value)"></div>
+      <button class="btn-logout" onclick="logout()">Sign Out</button>
+    </div>
+  </nav>
+
+  <div class="app-body">
+    <!-- NOTES -->
+    <div class="panel active" id="panel-notes">
+      <div class="notes-layout">
+        <div class="notes-sidebar">
+          <div class="sidebar-header">
+            <span class="sidebar-title">All Notes</span>
+            <button class="btn-add" onclick="newNote()">+</button>
+          </div>
+          <div class="notes-list" id="notes-list"></div>
+        </div>
+        <div class="notes-editor" id="notes-editor">
+          <div class="editor-empty" id="editor-empty">
+            <div class="editor-empty-icon">📝</div>
+            <div>Select a note or create a new one</div>
+          </div>
+          <div id="editor-active" style="display:none;flex-direction:column;height:100%">
+            <div class="editor-toolbar">
+              <input class="editor-title-input" id="editor-title" placeholder="Untitled note…" oninput="markDirty()">
+              <button class="btn-delete-note" onclick="deleteNote()">Delete</button>
+              <button class="btn-save" onclick="saveNote()">Save</button>
+            </div>
+            <div class="editor-body">
+              <textarea class="editor-textarea" id="editor-body" placeholder="Start writing…" oninput="markDirty()"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FILES -->
+    <div class="panel" id="panel-files">
+      <div class="files-layout">
+        <div class="files-header">
+          <div>
+            <div class="files-title">Files & Documents</div>
+            <div class="files-title-sub" id="files-count">0 documents stored</div>
+          </div>
+          <button class="btn-upload" onclick="document.getElementById('file-input').click()">↑ Upload File</button>
+        </div>
+        <div class="files-drop-zone" id="drop-zone"
+          ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropFile(event)"
+          onclick="document.getElementById('file-input').click()">
+          <div class="drop-icon">📂</div>
+          <div class="drop-text">Drop files here or click to browse</div>
+          <div class="drop-sub">All file types · Up to 50MB per file · Stored permanently on the server</div>
+        </div>
+        <div class="upload-progress" id="upload-progress">
+          <span class="spinner"></span> <span id="upload-status">Uploading…</span>
+          <div class="progress-bar-track"><div class="progress-bar-fill" id="progress-fill"></div></div>
+        </div>
+        <div class="files-grid" id="files-grid"></div>
+      </div>
+    </div>
+
+    <!-- CONTACTS -->
+    <div class="panel" id="panel-contacts">
+      <div class="contacts-layout">
+        <div class="contacts-sidebar">
+          <div class="sidebar-header">
+            <span class="sidebar-title">Contacts</span>
+            <button class="btn-add" onclick="openAddContactModal()">+</button>
+          </div>
+          <div class="contacts-list" id="contacts-list"></div>
+        </div>
+        <div class="contact-detail" id="contact-detail">
+          <div class="contact-detail-empty" id="contact-empty">
+            <div class="contact-detail-empty-icon">👤</div>
+            <div>Select a contact to view details</div>
+          </div>
+          <div id="contact-view" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Add Contact</div>
+    <div class="modal-fields" id="modal-fields"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-confirm" id="modal-confirm" onclick="modalConfirm()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<input type="file" id="file-input" multiple onchange="uploadFiles(this.files)">
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let notes = [], files = [], contacts = [];
+let activeNote = null, activeContact = null;
+let modalAction = null, editingContactId = null;
+
+// ── API helpers ───────────────────────────────────────────────────────────────
+async function api(method, url, body) {
+  const opts = { method, headers: {} };
+  if (body instanceof FormData) {
+    opts.body = body;
+  } else if (body) {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  }
+  const res = await fetch(url, opts);
+  if (res.status === 401) { showLogin(); return null; }
+  return res.json();
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+document.getElementById('password').addEventListener('keydown', e => { if (e.key==='Enter') login(); });
+document.getElementById('username').addEventListener('keydown', e => { if (e.key==='Enter') login(); });
+
+async function login() {
+  const u = document.getElementById('username').value.trim();
+  const p = document.getElementById('password').value;
+  const btn = document.getElementById('login-btn');
+  btn.textContent = 'Signing in…'; btn.disabled = true;
+  const res = await fetch('/api/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: u, password: p })
+  });
+  btn.textContent = 'Sign In →'; btn.disabled = false;
+  if (res.ok) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    document.getElementById('login-error').style.display = 'none';
+    loadAll();
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+    document.getElementById('password').value = '';
+  }
+}
+
+async function logout() {
+  await api('POST', '/api/logout');
+  showLogin();
+}
+
+function showLogin() {
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+// Check if already logged in on page load
+window.addEventListener('load', async () => {
+  const res = await fetch('/api/me');
+  if (res.ok) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    loadAll();
+  }
+});
+
+// ── Load all data ─────────────────────────────────────────────────────────────
+async function loadAll() {
+  const [n, f, c] = await Promise.all([
+    api('GET', '/api/notes'),
+    api('GET', '/api/files'),
+    api('GET', '/api/contacts')
+  ]);
+  notes = n || []; files = f || []; contacts = c || [];
+  renderNotes(); renderFiles(); renderContacts();
+}
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(tab, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── Search ────────────────────────────────────────────────────────────────────
+function globalSearch(q) {
+  const v = q.toLowerCase();
+  renderNotes(v); renderFiles(v); renderContacts(v);
+}
+
+// ── NOTES ─────────────────────────────────────────────────────────────────────
+function renderNotes(filter='') {
+  const list = document.getElementById('notes-list');
+  const filtered = notes.filter(n => !filter || n.title.toLowerCase().includes(filter) || n.body.toLowerCase().includes(filter));
+  list.innerHTML = filtered.length === 0
+    ? `<div style="padding:20px;color:var(--text3);font-size:12px;text-align:center">${filter ? 'No matching notes' : 'No notes yet'}</div>`
+    : filtered.map(n => `
+      <div class="note-item ${activeNote?.id===n.id?'active':''}" onclick="openNote('${n.id}')">
+        <div class="note-item-title">${esc(n.title||'Untitled')}</div>
+        <div class="note-item-preview">${esc((n.body||'').slice(0,60)||'—')}</div>
+        <div class="note-item-date">${fmtDate(n.updated)}</div>
+      </div>`).join('');
+}
+
+function openNote(id) {
+  activeNote = notes.find(n => n.id === id);
+  if (!activeNote) return;
+  document.getElementById('editor-empty').style.display = 'none';
+  document.getElementById('editor-active').style.display = 'flex';
+  document.getElementById('editor-title').value = activeNote.title;
+  document.getElementById('editor-body').value = activeNote.body;
+  renderNotes();
+}
+
+async function newNote() {
+  const note = await api('POST', '/api/notes', { title:'', body:'' });
+  if (!note) return;
+  notes.unshift(note);
+  renderNotes();
+  openNote(note.id);
+  document.getElementById('editor-title').focus();
+}
+
+function markDirty() {}
+
+async function saveNote() {
+  if (!activeNote) return;
+  const title = document.getElementById('editor-title').value.trim() || 'Untitled';
+  const body  = document.getElementById('editor-body').value;
+  const res = await api('PUT', `/api/notes/${activeNote.id}`, { title, body });
+  if (!res) return;
+  activeNote.title = title; activeNote.body = body; activeNote.updated = res.updated;
+  renderNotes();
+  toast('Note saved');
+}
+
+async function deleteNote() {
+  if (!activeNote) return;
+  await api('DELETE', `/api/notes/${activeNote.id}`);
+  notes = notes.filter(n => n.id !== activeNote.id);
+  activeNote = null;
+  document.getElementById('editor-empty').style.display = 'flex';
+  document.getElementById('editor-active').style.display = 'none';
+  renderNotes();
+  toast('Note deleted');
+}
+
+// ── FILES ─────────────────────────────────────────────────────────────────────
+function renderFiles(filter='') {
+  const grid = document.getElementById('files-grid');
+  const filtered = files.filter(f => !filter || f.name.toLowerCase().includes(filter));
+  document.getElementById('files-count').textContent = `${files.length} document${files.length!==1?'s':''} stored`;
+  if (filtered.length === 0) {
+    grid.innerHTML = `<div class="files-empty">${filter?'No matching files':'No files uploaded yet'}</div>`;
+    return;
+  }
+  const byType = {};
+  filtered.forEach(f => {
+    const g = getGroup(f.name.split('.').pop().toLowerCase());
+    if (!byType[g]) byType[g] = [];
+    byType[g].push(f);
+  });
+  grid.innerHTML = Object.entries(byType).map(([group, items]) => `
+    <div class="files-section-title">${group}</div>
+    <div class="file-cards">
+      ${items.map(f => `
+        <div class="file-card">
+          <button class="file-card-delete" onclick="deleteFile('${f.id}',event)">✕</button>
+          <div class="file-card-icon">${fileIcon(f.name)}</div>
+          <div class="file-card-name" title="${esc(f.name)}">${esc(f.name)}</div>
+          <div class="file-card-meta">${fmtSize(f.size)} · ${fmtDate(f.date)}</div>
+          <div class="file-card-actions">
+            <button class="file-btn-open" onclick="previewFile('${f.id}')">Open</button>
+            <button class="file-btn-dl" onclick="downloadFile('${f.id}','${esc(f.name)}')" title="Download">↓</button>
+          </div>
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+async function uploadFiles(fileList) {
+  const arr = Array.from(fileList);
+  if (!arr.length) return;
+  const progress = document.getElementById('upload-progress');
+  const fill = document.getElementById('progress-fill');
+  const status = document.getElementById('upload-status');
+  progress.style.display = 'block';
+  status.textContent = `Uploading ${arr.length} file${arr.length>1?'s':''}…`;
+  fill.style.width = '30%';
+  const fd = new FormData();
+  arr.forEach(f => fd.append('files', f));
+  const saved = await api('POST', '/api/files', fd);
+  fill.style.width = '100%';
+  if (saved) {
+    files = [...saved, ...files];
+    renderFiles();
+    toast(`${saved.length} file${saved.length>1?'s':''} uploaded`);
+  }
+  setTimeout(() => { progress.style.display = 'none'; fill.style.width = '0%'; }, 800);
+  document.getElementById('file-input').value = '';
+}
+
+function previewFile(id) {
+  window.open(`/api/files/${id}/preview`, '_blank');
+}
+
+function downloadFile(id, name) {
+  const a = document.createElement('a');
+  a.href = `/api/files/${id}/download`;
+  a.download = name;
+  a.click();
+}
+
+async function deleteFile(id, e) {
+  e.stopPropagation();
+  await api('DELETE', `/api/files/${id}`);
+  files = files.filter(f => f.id !== id);
+  renderFiles();
+  toast('File removed');
+}
+
+function dragOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('drag-over'); }
+function dragLeave() { document.getElementById('drop-zone').classList.remove('drag-over'); }
+function dropFile(e) { e.preventDefault(); dragLeave(); uploadFiles(e.dataTransfer.files); }
+
+// ── CONTACTS ──────────────────────────────────────────────────────────────────
+function renderContacts(filter='') {
+  const list = document.getElementById('contacts-list');
+  const filtered = contacts.filter(c => !filter || c.name.toLowerCase().includes(filter) || (c.email||'').toLowerCase().includes(filter));
+  list.innerHTML = filtered.length === 0
+    ? `<div style="padding:20px;color:var(--text3);font-size:12px;text-align:center">${filter?'No matches':'No contacts yet'}</div>`
+    : filtered.map(c => `
+      <div class="contact-item ${activeContact?.id===c.id?'active':''}" onclick="openContact('${c.id}')">
+        <div class="contact-avatar" style="background:${avatarColor(c.name)};color:#0f0f0f">${initials(c.name)}</div>
+        <div>
+          <div class="contact-name">${esc(c.name)}</div>
+          <div class="contact-role">${esc(c.role||c.email||'—')}</div>
+        </div>
+      </div>`).join('');
+}
+
+function openContact(id) {
+  activeContact = contacts.find(c => c.id === id);
+  if (!activeContact) return;
+  document.getElementById('contact-empty').style.display = 'none';
+  const view = document.getElementById('contact-view');
+  view.style.display = 'block';
+  const fields = [
+    {label:'Email',key:'email'},{label:'Phone',key:'phone'},
+    {label:'Role / Title',key:'role'},{label:'Company',key:'company'},
+    {label:'Address',key:'address'},{label:'Notes',key:'notes'}
+  ];
+  view.innerHTML = `
+    <div class="contact-detail-header">
+      <div class="contact-detail-avatar" style="background:${avatarColor(activeContact.name)};color:#0f0f0f">${initials(activeContact.name)}</div>
+      <div>
+        <div class="contact-detail-name">${esc(activeContact.name)}</div>
+        <div class="contact-detail-role">${esc(activeContact.role||activeContact.company||'')}</div>
+      </div>
+      <div class="contact-actions">
+        <button class="btn-edit" onclick="openEditContactModal('${activeContact.id}')">Edit</button>
+        <button class="btn-del-contact" onclick="deleteContact('${activeContact.id}')">Delete</button>
+      </div>
+    </div>
+    <div class="contact-fields">
+      ${fields.map(f=>`
+        <div>
+          <div class="contact-field-label">${f.label}</div>
+          <div class="contact-field-value ${activeContact[f.key]?'':'contact-field-empty'}">${esc(activeContact[f.key]||'Not provided')}</div>
+        </div>`).join('')}
+    </div>`;
+  renderContacts();
+}
+
+async function deleteContact(id) {
+  await api('DELETE', `/api/contacts/${id}`);
+  contacts = contacts.filter(c => c.id !== id);
+  activeContact = null;
+  document.getElementById('contact-empty').style.display = 'flex';
+  document.getElementById('contact-view').style.display = 'none';
+  renderContacts();
+  toast('Contact deleted');
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+const cFields = [
+  {key:'name',label:'Full Name',required:true},
+  {key:'email',label:'Email Address'},{key:'phone',label:'Phone Number'},
+  {key:'role',label:'Role / Title'},{key:'company',label:'Company'},
+  {key:'address',label:'Address'},{key:'notes',label:'Notes'}
+];
+
+function openAddContactModal() {
+  editingContactId = null;
+  document.getElementById('modal-title').textContent = 'Add Contact';
+  document.getElementById('modal-confirm').textContent = 'Add Contact';
+  document.getElementById('modal-fields').innerHTML = cFields.map(f=>`
+    <div>
+      <label class="modal-field-label">${f.label}${f.required?' *':''}</label>
+      <input class="modal-input" id="cf_${f.key}" placeholder="${f.label}">
+    </div>`).join('');
+  modalAction = 'add';
+  document.getElementById('modal').classList.add('open');
+  setTimeout(()=>document.getElementById('cf_name')?.focus(),100);
+}
+
+function openEditContactModal(id) {
+  const c = contacts.find(x=>x.id===id);
+  if (!c) return;
+  editingContactId = id;
+  document.getElementById('modal-title').textContent = 'Edit Contact';
+  document.getElementById('modal-confirm').textContent = 'Save Changes';
+  document.getElementById('modal-fields').innerHTML = cFields.map(f=>`
+    <div>
+      <label class="modal-field-label">${f.label}${f.required?' *':''}</label>
+      <input class="modal-input" id="cf_${f.key}" placeholder="${f.label}" value="${esc(c[f.key]||'')}">
+    </div>`).join('');
+  modalAction = 'edit';
+  document.getElementById('modal').classList.add('open');
+}
+
+async function modalConfirm() {
+  const data = {};
+  cFields.forEach(f => data[f.key] = document.getElementById('cf_'+f.key).value.trim());
+  if (!data.name) { document.getElementById('cf_name').focus(); return; }
+  if (modalAction === 'add') {
+    const c = await api('POST', '/api/contacts', data);
+    if (!c) return;
+    contacts.push(c);
+  } else {
+    const res = await api('PUT', `/api/contacts/${editingContactId}`, data);
+    if (!res) return;
+    const idx = contacts.findIndex(c=>c.id===editingContactId);
+    if (idx>=0) contacts[idx] = { ...contacts[idx], ...data };
+    if (activeContact?.id === editingContactId) activeContact = contacts[idx];
+  }
+  renderContacts();
+  closeModal();
+  toast(modalAction==='add' ? 'Contact added' : 'Contact updated');
+  if (modalAction==='edit' && activeContact) openContact(activeContact.id);
+}
+
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+document.getElementById('modal').addEventListener('click', e => { if (e.target===document.getElementById('modal')) closeModal(); });
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmtDate(ts) { return new Date(ts).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
+function fmtSize(b) { if(b<1024)return b+' B'; if(b<1048576)return(b/1024).toFixed(1)+' KB'; return(b/1048576).toFixed(1)+' MB'; }
+function initials(n) { return (n||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase(); }
+const ACOLORS=['#7bc9a8','#c97b8a','#7b9fc9','#c9a84c','#a87bc9','#c9c97b'];
+function avatarColor(n) { let h=0; for(let i=0;i<n.length;i++)h=(h*31+n.charCodeAt(i))&0xffffffff; return ACOLORS[Math.abs(h)%ACOLORS.length]; }
+function getGroup(ext) {
+  if(ext==='pdf')return 'PDF Documents';
+  if(['doc','docx'].includes(ext))return 'Word Documents';
+  if(['xls','xlsx','csv'].includes(ext))return 'Spreadsheets';
+  if(['jpg','jpeg','png','gif','webp','svg'].includes(ext))return 'Images';
+  if(['txt','md'].includes(ext))return 'Text Files';
+  return 'Other Files';
+}
+function fileIcon(n) {
+  const e=n.split('.').pop().toLowerCase();
+  if(e==='pdf')return'📄'; if(['doc','docx'].includes(e))return'📝'; if(['xls','xlsx','csv'].includes(e))return'📊';
+  if(['jpg','jpeg','png','gif','webp','svg'].includes(e))return'🖼️'; if(['zip','tar','gz'].includes(e))return'📦';
+  if(['mp3','wav','ogg'].includes(e))return'🎵'; if(['mp4','mov','avi'].includes(e))return'🎬'; return'📁';
+}
+let toastTimer;
+function toast(msg) {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),2500);
+}
+</script>
+</body>
+</html>
