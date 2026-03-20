@@ -78,7 +78,7 @@ app.use(session({
 
 const upload = multer({
   dest: UPLOADS_DIR,
-  limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit
+  limits: { fileSize: 1000000 * 1024 * 1024 } // 50MB limit
 });
 
 // Auth guard
